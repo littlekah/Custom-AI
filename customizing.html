@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Pluh++</title>
+    
+    <style>
+        /* Estilos do Editor (CSS) */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .container {
+            background-color: #34495e;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+        }
+
+        h2 {
+            color: #9b59b6; 
+            border-bottom: 2px solid #8e44ad;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        /* Botão de Voltar */
+        #home-link a {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        /* Estilos de Campos */
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input[type="text"], 
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #7f8c8d;
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        
+        #ai-photo-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #9b59b6;
+            margin-top: 10px;
+            display: block;
+        }
+
+        /* Área de Comandos Pluh++ */
+        #rules-container {
+            border: 1px dashed #2ecc71;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        /* Estilo Individual da Regra (Div) */
+        .pluh-rule {
+            background-color: #405269;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .pluh-rule input, .pluh-rule select, .pluh-rule textarea {
+            background-color: #34495e;
+            border: 1px solid #5d7494;
+        }
+
+        .pluh-rule label {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #add-rule-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+
+        /* Botão de Salvar */
+        #save-settings {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            font-size: 18px;
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="home-link">
+        <a href="index.html">⬅️ Voltar para o Chat</a>
+    </div>
+
+    <div class="container">
+        <h2>🛠️ Editor Pluh++ - Customização da IA</h2>
+        
+        <label for="ai-name">Nome da IA:</label>
+        <input type="text" id="ai-name" value="Custom IA">
+
+        <label for="ai-rules">Regras / Personalidade:</label>
+        <textarea id="ai-rules">Sou uma IA amigável e sigo as regras definidas abaixo. Minhas respostas são baseadas nos comandos Pluh++ que você programar.</textarea>
+
+        <label for="ai-photo-upload">Foto do Perfil (Upload):</label>
+        <input type="file" id="ai-photo-upload" accept="image/*">
+        <img id="ai-photo-preview" src="" alt="Pré-visualização da Foto">
+        
+        <br>
+        
+        <h3>Comandos Pluh++ de Conversação</h3>
+        <p style="color: #ccc; font-size: 0.9em;">Defina a palavra-chave que o usuário deve digitar e a ação correspondente.</p>
+        
+        <div id="rules-container">
+            </div>
+
+        <button id="add-rule-btn">➕ Adicionar Novo Comando Pluh++</button>
+
+        <button id="save-settings">Salvar e Aplicar Configurações</button>
+        <p id="save-status" class="status-message"></p>
+    </div>
+
+    <script>
+        // ==================================
+        // === LÓGICA JS DA PÁGINA EDITOR ===
+        // ==================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const saveBtn = document.getElementById('save-settings');
+            const saveStatus = document.getElementById('save-status');
+            const addRuleBtn = document.getElementById('add-rule-btn');
+            const rulesContainer = document.getElementById('rules-container');
+
+            const aiNameInput = document.getElementById('ai-name');
+            const aiRulesInput = document.getElementById('ai-rules');
+            const aiPhotoUpload = document.getElementById('ai-photo-upload');
+            const aiPhotoPreview = document.getElementById('ai-photo-preview');
+
+            let currentPhotoBase64 = ''; // Armazena a string Base64 da foto
+
+            // --- FUNÇÕES DE AJUDA ---
+
+            /**
+             * Converte um arquivo de imagem para Base64.
+             */
+            function fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            /**
+             * Gera o HTML para uma nova regra de conversação.
+             * @param {Object} rule - Objeto de regra (opcional, para carregar dados).
+             */
+            function createRuleElement(rule = {}) {
+                const defaults = {
+                    keyword: '',
+                    type: 'message', // 'message', 'function', 'web' (simulado)
+                    action: ''
+                };
+                const data = { ...defaults, ...rule };
+
+                const ruleDiv = document.createElement('div');
+                ruleDiv.className = 'pluh-rule';
+                
+                ruleDiv.innerHTML = `
+                    <button class="delete-btn" onclick="this.parentElement.remove()">X</button>
+                    <label>Palavra-Chave (Usuário deve digitar):</label>
+                    <input type="text" class="rule-keyword" value="${data.keyword}" placeholder="Ex: 'ajuda', 'clima', 'faca isso'">
+                    
+                    <label>Tipo de Comando Pluh++:</label>
+                    <select class="rule-type">
+                        <option value="message" ${data.type === 'message' ? 'selected' : ''}>Mensagem Normal (Texto Simples)</option>
+                        <option value="function" ${data.type === 'function' ? 'selected' : ''}>Função Interna (Ex: Data e Hora)</option>
+                        <option value="web" ${data.type === 'web' ? 'selected' : ''} disabled>Procurar na Web (Simulado)</option>
+                    </select>
+
+                    <label>Ação / Código Pluh++:</label>
+                    <textarea class="rule-action" rows="3" placeholder="Se tipo='message', digite a resposta.">${data.action}</textarea>
+                `;
+                rulesContainer.appendChild(ruleDiv);
+            }
+
+
+            // --- LÓGICA DE INICIALIZAÇÃO E SALVAMENTO ---
+
+            function loadConfig() {
+                const storedConfig = localStorage.getItem('customIAChatConfig');
+                
+                // Configurações Padrão
+                let initialConfig = {
+                    name: "Custom IA",
+                    rules: "Sou uma IA amigável...",
+                    photoUrl: '', // Base64
+                    responses: [
+                        { keyword: 'oi', type: 'message', action: 'Olá! Sou NAME, sua IA personalizada.' },
+                        { keyword: 'data', type: 'function', action: 'current_date' }
+                    ]
+                };
+
+                if (storedConfig) {
+                    try {
+                        initialConfig = JSON.parse(storedConfig);
+                    } catch (e) {
+                        console.error("Erro ao carregar ou parsear a configuração:", e);
+                    }
+                }
+                
+                // Carrega campos básicos
+                aiNameInput.value = initialConfig.name;
+                aiRulesInput.value = initialConfig.rules;
+                currentPhotoBase64 = initialConfig.photoUrl;
+                aiPhotoPreview.src = initialConfig.photoUrl || 'https://via.placeholder.com/80/7f8c8d/FFFFFF?text=IA';
+
+                // Carrega as regras dinâmicas
+                rulesContainer.innerHTML = '';
+                if (Array.isArray(initialConfig.responses)) {
+                    initialConfig.responses.forEach(rule => createRuleElement(rule));
+                }
+            }
+
+            function saveConfig() {
+                try {
+                    const allRules = [];
+                    const ruleElements = document.querySelectorAll('.pluh-rule');
+
+                    ruleElements.forEach(ruleDiv => {
+                        const rule = {
+                            keyword: ruleDiv.querySelector('.rule-keyword').value.toLowerCase().trim(),
+                            type: ruleDiv.querySelector('.rule-type').value,
+                            action: ruleDiv.querySelector('.rule-action').value,
+                        };
+                        if (rule.keyword) { // Só salva se tiver palavra-chave
+                            allRules.push(rule);
+                        }
+                    });
+
+                    // Aplica a variável NAME na mensagem/ação
+                    const finalRules = allRules.map(rule => {
+                        if (typeof rule.action === 'string') {
+                            rule.action = rule.action.replace(/NAME/g, aiNameInput.value);
+                        }
+                        return rule;
+                    });
+                    
+                    const newConfig = {
+                        name: aiNameInput.value,
+                        rules: aiRulesInput.value,
+                        photoUrl: currentPhotoBase64, // Base64 da foto
+                        responses: finalRules 
+                    };
+
+                    // Salva no LocalStorage
+                    localStorage.setItem('customIAChatConfig', JSON.stringify(newConfig));
+                    
+                    saveStatus.textContent = 'Configurações (Pluh++) salvas com sucesso!';
+                    saveStatus.style.color = '#2ecc71';
+                    setTimeout(() => { saveStatus.textContent = ''; }, 3000);
+
+                } catch (e) {
+                    saveStatus.textContent = 'Erro ao salvar: Verifique se todos os campos estão preenchidos corretamente.';
+                    saveStatus.style.color = '#e74c3c';
+                    console.error("Erro ao salvar:", e);
+                    setTimeout(() => { saveStatus.textContent = ''; }, 5000);
+                }
+            }
+            
+            // --- EVENT LISTENERS ---
+
+            // 1. Adicionar Nova Regra
+            addRuleBtn.addEventListener('click', () => createRuleElement());
+
+            // 2. Upload de Imagem (Converter para Base64)
+            aiPhotoUpload.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        const base64String = await fileToBase64(file);
+                        currentPhotoBase64 = base64String;
+                        aiPhotoPreview.src = base64String;
+                    } catch (error) {
+                        alert('Erro ao carregar a imagem. Tente outra.');
+                        console.error(error);
+                    }
+                }
+            });
+
+            // 3. Salvar
+            saveBtn.addEventListener('click', saveConfig);
+
+            // --- Inicialização ---
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
